@@ -5,8 +5,10 @@ import json
 csv_directory = 'Data/ClarityCSV'
 json_directory = 'Data/JSON'
 
+#
 # Create JSON files containing the blood glucose, timestamp, and transmitter ID
 # of each reading.
+#
 def create_json(filepath, json_name):
     data = {
         'BG':[],
