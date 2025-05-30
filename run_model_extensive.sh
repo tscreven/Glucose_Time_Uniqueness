@@ -34,7 +34,7 @@ for ((s=0; s<=1440; s+=$time_increment)); do
             printf "%s," "$arg" >> $filename1
             python3 generate_model_data.py . $s $e -stride $window_length -window_size $window_length $arg
             python3 model_train.py . -trace_len $window_length -epochs 2500 -dim $num_dim
-            python3 model_test.py . checkpoints/generic_model_model.keras -file_results testing_$filename1
+            python3 model_test.py . models/generic_model_model.keras -file_results testing_$filename1
         done
     done
 

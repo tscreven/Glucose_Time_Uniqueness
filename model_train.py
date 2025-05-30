@@ -18,7 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Time in day detection')
     parser.add_argument('data', help='Path to training data.')
     parser.add_argument('-model_name', default='generic_model', help='Name of model.')
-    parser.add_argument('-ckpt_dir', default='checkpoints', type=str, help='Filepath to save model checkpoints.')
+    parser.add_argument('-model_dir', default='models', type=str, help='Filepath to save model checkpoints.')
     parser.add_argument('-trace_length', default=12, type=int, help='Number of glucose readings in each window.')
     parser.add_argument('-dim', default=5, type=int, help='Number of feature dimensions in each data window.')
     parser.add_argument('-num_classes', default=2, type=int, help='Number of classes.')
@@ -58,10 +58,10 @@ def main():
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
         
-    checkpoint_name = args.model_name + '_model.keras'
+    model_name = args.model_name + '_model.keras'
     
-    checkpoint = ModelCheckpoint(os.path.join(args.ckpt_dir,
-                                              checkpoint_name),
+    checkpoint = ModelCheckpoint(os.path.join(args.model_dir,
+                                              model_name),
                                  monitor='val_accuracy', verbose=1,
                                  save_best_only=True, mode='max')
     
@@ -75,22 +75,24 @@ def main():
     max_val_acc_epoch = np.argmax(history.history['val_accuracy'])
 
     # Predict at the epoch with the max validation accuracy
-    best_model = load_model(os.path.join(args.ckpt_dir, checkpoint_name))
+    best_model = load_model(os.path.join(args.model_dir, model_name))
     scores = best_model.predict(X_test)
     
     if args.file_results is not None and not os.path.exists(args.file_results):
         write_file_header(args.file_results, training_result=True)
 
-    metrics(y_test, scores, args.file_results, epoch=max_val_acc_epoch, verbose=True, training_result=True)
+    predictions = metrics(y_test, scores, args.file_results, epoch=max_val_acc_epoch, verbose=True, training_result=True)
 
     if args.visualize:
+        name_prefix = f'{args.model_dir}/{args.model_name}'
         plt.plot(history.history['accuracy'], label='Training Accuracy')
         plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
         plt.xlabel('Epoch')
         plt.ylabel('Accuracy')
         plt.title('Training and Validation Accuracy')
         plt.legend()
-        plt.savefig(checkpoint_name + '.png')
+        plt.savefig(f'{name_prefix}_trainingacc.png')
+        #get_cf_matrix(y_test, predictions, savepath=f'{name_prefix}_cfmatrix_training.png')
 
 
 if __name__ == '__main__':
