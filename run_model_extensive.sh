@@ -1,14 +1,18 @@
 #!/bin/bash
 
+# Bash script which extensively tests the time classifier model's performance
+# on every combinations of input features for a range of target times.
+
 input_features=("-use_gluc" "-use_d_gluc" "-use_d_d_gluc" "-use_dev" "-use_outlier")
-window_length=12
-num_runs=5
-time_increment=120
+window_length=12 # Number of glucose readings placed in each window of data.
+num_runs=5 # Number of times each combination of input features is generated, and trained/tested by the model.
+time_increment=120 # Number of minutes to increment from previous target time's end.
+target_length=480 #Total number of minutes from start time to end time labeled as positive class.
 num_features=${#input_features[@]}
 total=$((1 << num_features)) 
 
-for ((s=480; s<=1440; s+=$time_increment)); do
-    e=$((s+480))
+for ((s=0; s<=1440; s+=$time_increment)); do
+    e=$((${s}+${target_length}))
     filename1=model_runs_${s}_${e}_1h.csv
     filename2=${s}_${e}_1h.csv
 
