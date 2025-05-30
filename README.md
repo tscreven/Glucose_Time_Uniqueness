@@ -9,6 +9,4 @@ readings are inside or outside a time range. The user determines the start and
 end time of this window. Each series contains a sequence of consecutive data
 derived from a CGM reading.
 
-# Process Overview
-This repo contains `Python` and shell script files which process downloaded
-blood glucose csv data files from Dexcom Clarity into JSON files. It then 
+README.md work in progress.
