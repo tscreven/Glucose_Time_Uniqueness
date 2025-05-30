@@ -191,17 +191,17 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool, use_med
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Generate train and test data')
-    parser.add_argument('directory_path',help='Path to directory where numpy files will be stored',default='.')
-    parser.add_argument('start',help='Starting time to predict (in minutes)',type=int)
-    parser.add_argument('end',help='Ending time to predict (in minutes)',type=int)
-    parser.add_argument('-split',help='Percentage of data in train set',type=float, default=0.8)
-    parser.add_argument('-stride',help='Stride length of window',type=int)
-    parser.add_argument('-window_size',help='Window length',type=int)
-    parser.add_argument('-use_gluc',help='Use glucose as a feature',action='store_true')
-    parser.add_argument('-use_d_gluc',help='Use delta glucose as a feature',action='store_true')
-    parser.add_argument('-use_d_d_gluc',help='Use delta delta glucose as a feature',action='store_true')
-    parser.add_argument('-use_dev',help='Use glucose median differential as a feature',action='store_true')
-    parser.add_argument('-use_outlier',help='Use glucose outliers as a feature',action='store_true')
+    parser.add_argument('directory_path', help='Path to directory where numpy files will be stored', default='.')
+    parser.add_argument('start', help='Starting time to predict (in minutes)', type=int)
+    parser.add_argument('end', help='Ending time to predict (in minutes)', type=int)
+    parser.add_argument('-split', help='Percentage of data in train set', type=float, default=0.8)
+    parser.add_argument('-stride', help='Stride length of window', type=int, default=12)
+    parser.add_argument('-window_size', help='Window length', type=int)
+    parser.add_argument('-use_gluc', help='Use glucose as a feature', action='store_true')
+    parser.add_argument('-use_d_gluc', help='Use delta glucose as a feature', action='store_true')
+    parser.add_argument('-use_d_d_gluc', help='Use delta delta glucose as a feature', action='store_true')
+    parser.add_argument('-use_dev', help='Use glucose median differential as a feature', action='store_true')
+    parser.add_argument('-use_outlier', help='Use glucose outliers as a feature', action='store_true')
     args = parser.parse_args()
 
     features = []
