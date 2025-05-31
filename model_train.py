@@ -16,12 +16,11 @@ from model_methods import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Time in day detection')
-    parser.add_argument('data', help='Path to training data.')
+    parser.add_argument('data', help='Filepath to training data.')
     parser.add_argument('-model_name', default='generic_model', help='Name of model.')
     parser.add_argument('-model_dir', default='models', type=str, help='Filepath to save model checkpoints.')
-    parser.add_argument('-trace_length', default=12, type=int, help='Number of glucose readings in each window.')
+    parser.add_argument('-trace_length', type=int, help='Number of CGM readings in each window.')
     parser.add_argument('-dim', default=5, type=int, help='Number of feature dimensions in each data window.')
-    parser.add_argument('-num_classes', default=2, type=int, help='Number of classes.')
     parser.add_argument('-epochs', default=1000, type=int, help='Number of training epochs.')
     parser.add_argument('-batch_size', default=500, type=int, help='Batch size.')
     parser.add_argument('-lr', default=0.001, type=float, help='Learning rate.')
@@ -35,7 +34,8 @@ def parse_args():
 def main():
     clear_session()
     args = parse_args()
-    tf.random.set_seed(args.seed) 
+    tf.random.set_seed(args.seed)
+    num_classes = 2 
     
     X_train = np.load(os.path.join(args.data, 'X_train.npy'))
     y_train = np.load(os.path.join(args.data, 'y_train.npy'))
@@ -52,7 +52,7 @@ def main():
     model = Sequential([Conv1D(filters=4, kernel_size=3, activation='relu',
                                input_shape=(args.trace_length, args.dim), padding='same'),
                         Flatten(),
-                        Dense(args.num_classes, activation='sigmoid')])
+                        Dense(num_classes, activation='sigmoid')])
         
     model.compile(optimizer=SGD(learning_rate=args.lr, momentum=args.momentum),
                   loss='sparse_categorical_crossentropy',
@@ -92,7 +92,7 @@ def main():
         plt.title('Training and Validation Accuracy')
         plt.legend()
         plt.savefig(f'{name_prefix}_trainingacc.png')
-        #get_cf_matrix(y_test, predictions, savepath=f'{name_prefix}_cfmatrix_training.png')
+        get_cf_matrix(y_test, predictions, savepath=f'{name_prefix}_cfmatrix_training.png')
 
 
 if __name__ == '__main__':

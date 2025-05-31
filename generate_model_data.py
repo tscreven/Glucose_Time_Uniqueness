@@ -8,6 +8,9 @@ import pandas as pd
 STRIDE = 0
 WINDOW_SIZE = 0
 MAX_GAP = 0.25
+CGM_TIME = 5
+
+assert MAX_GAP >= 0 and MAX_GAP <= 1
 
 #
 # Break inputed data list into chunks using STRIDE and WINDOW_SIZE.
@@ -40,7 +43,7 @@ def get_time_chunks(timestamps, start, end):
     timestamps = [convert_timestamp(time) for time in timestamps]
     time_chunks = break_chunks(timestamps)
     include_chunks, labels = [], []
-    time_gap = min(30, MAX_GAP*WINDOW_SIZE*5)
+    time_gap = min(30, MAX_GAP * WINDOW_SIZE * CGM_TIME)
 
     for chunk in time_chunks:
         after_start = is_in_window(chunk[0], start, end)
@@ -126,7 +129,7 @@ def is_in_window(time:int, start:int, end:int) ->bool:
 # between start and end, vice versa for negative. Window is not used if it has
 # data in both the positive and negative class.
 #
-def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool, use_median:bool, use_outlier:bool, start:int, end:int):
+def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool, use_median:bool, use_outlier:bool, start:int, end:int, outlier_low:float, outlier_high:float):
     x = []
     y = []
     files = os.listdir('Data/JSON')
@@ -142,7 +145,7 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool, use_med
         d_chunks = get_delta_gluc_chunks(bg)
         d_d_delta_chunks = get_d_d_gluc_chunks(d_chunks)
         diff_chunks = get_median_chunks(bg_chunks)
-        bound1, bound2 = list(pd.DataFrame(bg).quantile([0.15, 0.85])[0])
+        bound1, bound2 = list(pd.DataFrame(bg).quantile([outlier_low, outlier_high])[0])
         outlier_chunks = get_outlier_chunks(bg, bound1, bound2)
 
         assert len(bg_chunks) == len(d_chunks) == len(d_d_delta_chunks) == len(diff_chunks) == len(time_chunks) == len(include_chunks) == len(labels)
@@ -192,11 +195,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Generate train and test data')
     parser.add_argument('directory_path', help='Path to directory where numpy files will be stored', default='.')
-    parser.add_argument('start', help='Starting time to predict (in minutes)', type=int)
-    parser.add_argument('end', help='Ending time to predict (in minutes)', type=int)
+    parser.add_argument('start', help='Starting time to target range (in minutes)', type=int)
+    parser.add_argument('end', help='Ending time to target range (in minutes)', type=int)
+    parser.add_argument('window_size', help='Window length', type=int)
+    parser.add_argument('stride', help='Stride length of window', type=int)
     parser.add_argument('-split', help='Percentage of data in train set', type=float, default=0.8)
-    parser.add_argument('-stride', help='Stride length of window', type=int, default=12)
-    parser.add_argument('-window_size', help='Window length', type=int)
+    parser.add_argument('-outlier_low', help='Lowerbound percentile bound for outlier', type=float, default=0.15)
+    parser.add_argument('-outlier_high', help='Upperbound percentile bound for outlier', type=float, default=0.85)
     parser.add_argument('-use_gluc', help='Use glucose as a feature', action='store_true')
     parser.add_argument('-use_d_gluc', help='Use delta glucose as a feature', action='store_true')
     parser.add_argument('-use_d_d_gluc', help='Use delta delta glucose as a feature', action='store_true')
@@ -227,6 +232,10 @@ if __name__ == '__main__':
         print('-window_size and -stride must be positive.')
         sys.exit(1)
 
+    if args.outlier_low < 0 or args.outlier_low > 1 or args.outlier_high < 0 or args.outlier_high > 1:
+        print('-outlier_low and outlier_high must = [0, 1]') 
+        sys.exit(1)
+
     if not os.path.exists(args.directory_path):
         os.makedirs(args.directory_path)
 
@@ -236,7 +245,9 @@ if __name__ == '__main__':
 
     STRIDE = args.stride
     WINDOW_SIZE = args.window_size
-    x, y = process_data(args.use_gluc, args.use_d_gluc, args.use_d_d_gluc, args.use_dev, args.use_outlier, args.start, args.end)
+    x, y = process_data(args.use_gluc, args.use_d_gluc, args.use_d_d_gluc, 
+                        args.use_dev, args.use_outlier, args.start, args.end,
+                        args.outlier_low, args.outlier_high)
     
     p = np.random.permutation(len(x))
     x_shuffle = x[p]
