@@ -6,23 +6,24 @@ import argparse
 # accuracy, negative class accuracy, and positive class accuracy to newfile.
 #
 def average_results(num_runs:int, file:str, newfile:str):
-    f1 = open(file, 'r')
-    f2 = open(newfile, 'w')
-    reader = csv.reader(f1)
-    print('Features, Average Overall Accuracy, Average Class 0 Accuracy, Average Class 1 Accuracy', file=f2, end='')
+    file1 = open(file, 'r')
+    file2 = open(newfile, 'w')
+    reader = csv.reader(file1)
+    print('Feature,Overall Accuracy,Recall,Precision,F1', file=file2, end='')
 
-    acc, acc0, acc1 = 0, 0, 0
+    acc, recall, precision, f1_score = 0, 0, 0, 0
     for r, line in enumerate(reader):
         if r == 0: continue
-        acc += float(line[2])
-        acc0 += float(line[3])
-        acc1 += float(line[4])
+        acc += float(line[1])
+        recall += float(line[2])
+        precision += float(line[3])
+        f1_score += float(line[4])
         if r % num_runs == 0:
-            print(f'\n{line[0]},{acc/num_runs},{acc0/num_runs},{acc1/num_runs}', file=f2, end='')
-            acc, acc0, acc1 = 0, 0, 0
+            print(f'\n{line[0]},{acc/num_runs},{recall/num_runs},{precision/num_runs},{f1_score/num_runs}', file=file2, end='')
+            acc, recall, precision, f1_score = 0, 0, 0, 0
 
-    f1.close()
-    f2.close()
+    file1.close()
+    file2.close()
 
 if __name__ == '__main__':
 
