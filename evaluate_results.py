@@ -2,8 +2,8 @@ import csv
 import argparse
 
 #
-# For each combination of features results in file, write the averaged overall
-# accuracy, negative class accuracy, and positive class accuracy to newfile.
+# For each combination of features results in file, write the averaged metrics
+# to newfile.
 #
 def average_results(num_runs:int, file:str, newfile:str):
     file1 = open(file, 'r')

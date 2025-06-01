@@ -33,7 +33,7 @@ for ((s=900; s<=1440; s+=$time_increment)); do
         num_dim=${#subset[@]}
         for ((a=0; a<$num_runs; a++)); do
             printf "%s," "$arg" >> $filename1
-            python3 generate_model_data.py . $s $e $window_length $stride $arg
+            python3 generate_model_data.py . $s $e $window_length $stride $arg -equal_class_size
             python3 model_train.py . -trace_len $window_length -epochs 2500 -dim $num_dim
             python3 model_test.py . models/generic_model_model.keras -file_results $filename1
         done

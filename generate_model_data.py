@@ -7,10 +7,10 @@ import pandas as pd
 
 STRIDE = 0
 WINDOW_SIZE = 0
-MAX_GAP = 0.25
-CGM_TIME = 5
+MAX_GAP = 0.25 
+CGM_TIME = 5 # Change if CGM reading frequency is not five minutes.
 
-assert MAX_GAP >= 0 and MAX_GAP <= 1
+assert MAX_GAP >= 0 and MAX_GAP <= 1 and CGM_TIME > 0
 
 #
 # Break inputed data list into chunks using STRIDE and WINDOW_SIZE.
@@ -129,7 +129,9 @@ def is_in_window(time:int, start:int, end:int) ->bool:
 # between start and end, vice versa for negative. Window is not used if it has
 # data in both the positive and negative class.
 #
-def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool, use_median:bool, use_outlier:bool, start:int, end:int, outlier_low:float, outlier_high:float):
+def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool, 
+                use_median:bool, use_outlier:bool, equal_class_sizes:bool, 
+                start:int, end:int, outlier_low:float, outlier_high:float):
     x = []
     y = []
     files = os.listdir('Data/JSON')
@@ -147,8 +149,8 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool, use_med
         diff_chunks = get_median_chunks(bg_chunks)
         bound1, bound2 = list(pd.DataFrame(bg).quantile([outlier_low, outlier_high])[0])
         outlier_chunks = get_outlier_chunks(bg, bound1, bound2)
-
-        assert len(bg_chunks) == len(d_chunks) == len(d_d_delta_chunks) == len(diff_chunks) == len(time_chunks) == len(include_chunks) == len(labels)
+        assert len(bg_chunks) == len(d_chunks) == len(d_d_delta_chunks) == len(diff_chunks) == len(time_chunks) == len(include_chunks) == len(labels) == len(outlier_chunks)
+        
         num_chunks = len(bg_chunks)
         for i in range(num_chunks):
             if include_chunks[i]: 
@@ -169,26 +171,27 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool, use_med
     x = np.array(x)
     y = np.array(y)
 
-    # Calculate class imbalance.              
-    num_class_0 = np.sum(y == 0)
-    num_class_1 = np.sum(y == 1)
-    num_needed = abs(num_class_0 - num_class_1)
-    majority_class = 0 if num_class_0 > num_class_1 else 1
-    if num_needed > 0:
-        indices_min_class = np.where(y == majority_class)[0] # Randomly sample indices to remove from class 0.
-        indices_to_remove = np.random.choice(indices_min_class, num_needed, replace=False)
-        mask = np.ones(len(y), dtype=bool)
-        mask[indices_to_remove] = False
-        x_balanced = x[mask]
-        y_balanced = y[mask]
-        x = x_balanced
-        y = y_balanced
-        print(f"Balancing complete. Removed {num_needed} from class {majority_class}. Number of samples in each class = {np.sum(y_balanced == 0)}")
-    else:
-        print("No balancing needed. Classes are already balanced.")
+    if equal_class_sizes:
+        # Enforcing equal class sizes in dataset. Randomly remove windows from
+        # majority class until equal class sizes are reached.            
+        num_class_0 = np.sum(y == 0)
+        num_class_1 = np.sum(y == 1)
+        num_needed = abs(num_class_0 - num_class_1)
+        majority_class = 0 if num_class_0 > num_class_1 else 1
+        if num_needed > 0:
+            indices_min_class = np.where(y == majority_class)[0]
+            indices_to_remove = np.random.choice(indices_min_class, num_needed, replace=False)
+            mask = np.ones(len(y), dtype=bool)
+            mask[indices_to_remove] = False
+            x_balanced = x[mask]
+            y_balanced = y[mask]
+            x = x_balanced
+            y = y_balanced
+            print(f'Balancing complete. Removed {num_needed} from class {majority_class}. Number of samples in each class = {np.sum(y_balanced == 0)}')
+        else:
+            print("No balancing needed. Classes are already balanced.")
 
-    x = np.transpose(x, (0, 2 , 1))
-
+    x = np.transpose(x, (0, 2 , 1)) # Fitting data for tensorflow model.
     return x, y
 
 if __name__ == '__main__':
@@ -207,6 +210,7 @@ if __name__ == '__main__':
     parser.add_argument('-use_d_d_gluc', help='Use delta delta glucose as a feature', action='store_true')
     parser.add_argument('-use_dev', help='Use glucose median differential as a feature', action='store_true')
     parser.add_argument('-use_outlier', help='Use glucose outliers as a feature', action='store_true')
+    parser.add_argument('-equal_class_size', help='Require class balance in dataset.', action='store_true')
     args = parser.parse_args()
 
     features = []
@@ -246,9 +250,11 @@ if __name__ == '__main__':
     STRIDE = args.stride
     WINDOW_SIZE = args.window_size
     x, y = process_data(args.use_gluc, args.use_d_gluc, args.use_d_d_gluc, 
-                        args.use_dev, args.use_outlier, args.start, args.end,
-                        args.outlier_low, args.outlier_high)
+                        args.use_dev, args.use_outlier, args.equal_class_size, 
+                        args.start, args.end, args.outlier_low, args.outlier_high)
     
+    # Randomly shuffle windows and split data instances and labels into train
+    # and test set.
     p = np.random.permutation(len(x))
     x_shuffle = x[p]
     y_shuffle = y[p]

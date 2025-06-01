@@ -129,8 +129,9 @@ blood glucose data:
   outlier reading. 
 
 ### Command-line
-`python3 generate_model_data.py <directory_path> <start> <end> <window_size> <stride> <-split> <-outlier_low> <-outlier_high> <-use_gluc> <-use_d_gluc> <-use_d_d_gluc> <-use_dev> <-use_outlier>`
+`python3 generate_model_data.py <directory_path> <start> <end> <window_size> <stride> <-split> <-outlier_low> <-outlier_high> <-use_gluc> <-use_d_gluc> <-use_d_d_gluc> <-use_dev> <-use_outlier> <-equal_class_size>`
 </br>**Note**: Do not include < and > characters in command-line arguments. Used here to help emphasize each argument.
+
 * `<directory_path>`: Filepath to where training and testing files will be stored.
 * `<start>`: Starting time to target range, measured in minutes since midnight
   (00:00). For example, the time 4:30 is equivelant to 270 minutes ($6 \times
@@ -155,6 +156,9 @@ blood glucose data:
 * `<-use_d_d_gluc>`: Optional argument to use delta delta glucose as feature.
 * `<-use_dev>`: Optional argument to use deviation as feature.
 * `<-use_outliers>`: Optional argument to use outliers as feature.
+* `<-equal_class_size>`: Optional argument to enforce equal class balance in
+  dataset. If set, windows will be randomly removed from majority class until
+  equal class representation in dataset is reached.
 
 **TODO**
 * If you are using data from a CGM whose gap between readings is not 5 minutes, change `CGM_TIME` on line 11 to reflect the correct frequency in minutes. (If frequency is not whole minutes, can make it into a float value of number of minutes).
