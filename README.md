@@ -41,7 +41,7 @@ inside the target time range. `model_test.py` tests the model trained in
 
 ## Downloading and Processing Data
 ### If CGM Data is from Dexcom Clarity:</br>
-As of June, 2025, the export file formats from Dexcom Clarity match what the
+As of July, 2025, the export file formats from Dexcom Clarity match what the
 files below are expecting. However, if the format changes and it is no longer
 compatible, follow the instructions in [If CGM Data is not from Dexcom Clarity](#if-cgm-data-is-not-from-dexcom-clarity).</br> 
 * On the Dexcom Clarity website (clarity.dexcom.com), download the data into
@@ -157,8 +157,7 @@ blood glucose data:
 * `<-use_dev>`: Optional argument to use deviation as feature.
 * `<-use_outliers>`: Optional argument to use outliers as feature.
 * `<-equal_class_size>`: Optional argument to enforce equal class balance in
-  dataset. If set, windows will be randomly removed from majority class until
-  equal class representation in dataset is reached.
+  dataset. If set, windows will be randomly removed from majority class until equal class representation in dataset is reached.
 
 **TODO**
 * If you are using data from a CGM whose gap between readings is not 5 minutes, change `CGM_TIME` on line 11 to reflect the correct frequency in minutes. (If frequency is not whole minutes, can make it into a float value of number of minutes).

@@ -1,6 +1,7 @@
 import os
 import argparse
 import numpy as np
+import time
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.backend import clear_session
@@ -16,6 +17,8 @@ def parse_args():
     return parser.parse_args()
          
 if __name__ == '__main__':
+    s_time = time.time()
+
     clear_session()
     args = parse_args()
     tf.random.set_seed(args.seed) 
@@ -31,3 +34,6 @@ if __name__ == '__main__':
     prefix= args.load_model[:-12] #removing "_model.keras" filepath to model.
     if args.visualize:
         get_cf_matrix(y_test, predictions, savepath=f'{prefix}_cfmatrix_testing.png', show=False)
+    
+    e_time = time.time()
+    print(f'Time to test model = {round(e_time-s_time, 2)} seconds.')

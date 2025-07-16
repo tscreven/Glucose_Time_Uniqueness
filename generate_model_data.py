@@ -4,11 +4,13 @@ import numpy as np
 import argparse
 import os
 import pandas as pd
+import time
+from model_methods import split_data
 
 STRIDE = 0
 WINDOW_SIZE = 0
 MAX_GAP = 0.25 
-CGM_TIME = 5 # Change if CGM reading frequency is not five minutes.
+CGM_TIME = 5 # TODO: Change if CGM reading frequency is not five minutes.
 
 assert MAX_GAP >= 0 and MAX_GAP <= 1 and CGM_TIME > 0
 
@@ -67,8 +69,10 @@ def get_time_chunks(timestamps, start, end):
 # Smooth glucose data using min max normalization. Return windows of normalized
 # data.
 # 
-def get_gluc_chunks(glucose):
-    return break_chunks(normalize(glucose))
+def get_gluc_chunks(glucose, smooth=True):
+    if smooth:
+        return break_chunks(normalize(glucose))
+    return break_chunks(glucose)
 
 # 
 # Calculate delta glucose from normalized glucose data by taking difference from
@@ -134,6 +138,8 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool,
                 start:int, end:int, outlier_low:float, outlier_high:float):
     x = []
     y = []
+    raw_gluc_windows = []
+
     files = os.listdir('Data/JSON')
     for file in files:
         with open(f'Data/JSON/{file}') as f:
@@ -142,6 +148,8 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool,
         bg = data['BG']    
         timestamps = data['Timestamp']
 
+        unnorm_bg_chunks = get_gluc_chunks(bg, smooth=False)
+
         time_chunks, include_chunks, labels = get_time_chunks(timestamps, start, end)
         bg_chunks = get_gluc_chunks(bg)
         d_chunks = get_delta_gluc_chunks(bg)
@@ -149,7 +157,7 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool,
         diff_chunks = get_median_chunks(bg_chunks)
         bound1, bound2 = list(pd.DataFrame(bg).quantile([outlier_low, outlier_high])[0])
         outlier_chunks = get_outlier_chunks(bg, bound1, bound2)
-        assert len(bg_chunks) == len(d_chunks) == len(d_d_delta_chunks) == len(diff_chunks) == len(time_chunks) == len(include_chunks) == len(labels) == len(outlier_chunks)
+        assert len(bg_chunks) == len(d_chunks) == len(d_d_delta_chunks) == len(diff_chunks) == len(time_chunks) == len(include_chunks) == len(labels) == len(outlier_chunks) == len(unnorm_bg_chunks)
         
         num_chunks = len(bg_chunks)
         for i in range(num_chunks):
@@ -167,13 +175,18 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool,
                 if use_outlier:
                     row.append(outlier_chunks[i])
                 x.append(row)
+                raw_gluc_windows.append(unnorm_bg_chunks[i])
     
     x = np.array(x)
     y = np.array(y)
+    np.save('unnorm_gluc.npy', raw_gluc_windows)
+    np.save('unnorm_gluc_labels.npy', y)
 
     if equal_class_sizes:
         # Enforcing equal class sizes in dataset. Randomly remove windows from
-        # majority class until equal class sizes are reached.            
+        # majority class until number of instances in each class is equal.
+        # NOTE: If equal_class_sizes is true, the data instances fed into the
+        # model will be nondeterministic.            
         num_class_0 = np.sum(y == 0)
         num_class_1 = np.sum(y == 1)
         num_needed = abs(num_class_0 - num_class_1)
@@ -194,8 +207,7 @@ def process_data(use_glucose:bool, use_delta:bool, use_delta_delta:bool,
     x = np.transpose(x, (0, 2 , 1)) # Fitting data for tensorflow model.
     return x, y
 
-if __name__ == '__main__':
-
+def parser():
     parser = argparse.ArgumentParser(description='Generate train and test data')
     parser.add_argument('directory_path', help='Path to directory where numpy files will be stored', default='.')
     parser.add_argument('start', help='Starting time to target range (in minutes)', type=int)
@@ -211,7 +223,10 @@ if __name__ == '__main__':
     parser.add_argument('-use_dev', help='Use glucose median differential as a feature', action='store_true')
     parser.add_argument('-use_outlier', help='Use glucose outliers as a feature', action='store_true')
     parser.add_argument('-equal_class_size', help='Require class balance in dataset.', action='store_true')
-    args = parser.parse_args()
+    return parser.parse_args()
+
+def main():
+    args = parser()
 
     features = []
     if args.use_gluc: features.append('glucose')
@@ -247,6 +262,8 @@ if __name__ == '__main__':
     print(f'Using stride {args.stride} and window size {args.window_size}')
     print(f'Including feature(s) {", ".join(features)}')
 
+    global STRIDE
+    global WINDOW_SIZE
     STRIDE = args.stride
     WINDOW_SIZE = args.window_size
     x, y = process_data(args.use_gluc, args.use_d_gluc, args.use_d_d_gluc, 
@@ -255,14 +272,7 @@ if __name__ == '__main__':
     
     # Randomly shuffle windows and split data instances and labels into train
     # and test set.
-    p = np.random.permutation(len(x))
-    x_shuffle = x[p]
-    y_shuffle = y[p]
-    split = round(args.split * len(x))
-    x_train = x_shuffle[:split]
-    y_train = y_shuffle[:split]
-    x_test = x_shuffle[split:]
-    y_test = y_shuffle[split:]
+    x_train, y_train, x_test, y_test = split_data(x, y, args.split)
     print(x_train.shape, x_test.shape)
     print(y_train.shape, y_test.shape)
 
@@ -270,3 +280,9 @@ if __name__ == '__main__':
     np.save(f'{args.directory_path}/X_test.npy', x_test)
     np.save(f'{args.directory_path}/y_train.npy', y_train)
     np.save(f'{args.directory_path}/y_test.npy', y_test)
+
+if __name__ == '__main__':
+    s_time = time.time()
+    main()
+    e_time = time.time()
+    print(f'Time to generate train and test data = {round(e_time-s_time, 2)} seconds.')

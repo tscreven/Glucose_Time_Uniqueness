@@ -1,8 +1,9 @@
 import os
 import argparse
 import numpy as np
-import tensorflow as tf
 import matplotlib.pyplot as plt
+import time
+import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import (Input, Conv1D, Dense, Flatten, concatenate, BatchNormalization,
                                      Dropout, GlobalAveragePooling2D, LSTM, Permute)
@@ -14,7 +15,7 @@ from keras.callbacks import ModelCheckpoint
 from sklearn.utils import class_weight
 from model_methods import *
 
-def parse_args():
+def parser():
     parser = argparse.ArgumentParser(description='Time in day detection')
     parser.add_argument('data', help='Filepath to training data.')
     parser.add_argument('-model_name', default='generic_model', help='Name of model.')
@@ -33,7 +34,7 @@ def parse_args():
     
 def main():
     clear_session()
-    args = parse_args()
+    args = parser()
     tf.random.set_seed(args.seed)
     num_classes = 2 
     
@@ -96,4 +97,7 @@ def main():
 
 
 if __name__ == '__main__':
+    s_time = time.time()
     main()
+    e_time = time.time()
+    print(f'Time to train model = {round(e_time-s_time, 2)} seconds.')

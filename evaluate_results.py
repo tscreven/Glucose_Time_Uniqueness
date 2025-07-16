@@ -30,7 +30,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Average results of multiple model evaluations.')
     parser.add_argument('num_evaluations',help='Number of times model was evaluated for each feature combination', type=int)
     parser.add_argument('filename',help='Filepath to CSV file containing unaveraged model results.')
-    parser.add_argument('new_filename',help='Filepath to CSV file containing unaveraged model results.')
+    parser.add_argument('new_filename',help='Filepath to CSV file containing averaged model results.')
     args = parser.parse_args()
 
     if args.filename[-4:] != '.csv' or args.new_filename[-4:] != '.csv':
