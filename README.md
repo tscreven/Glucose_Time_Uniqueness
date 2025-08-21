@@ -9,8 +9,7 @@ determines the start and end time of this range. Each series contains a
 sequence of consecutive data derived from a CGM reading. </br> 
 
 The inspiration for this project was to see if ML models can detect differences
-in blood glucose behavior during different times of the day. A report document
-for the results on a dataset of blood glucose values is in the works.
+in blood glucose behavior during different times of the day.
 
 ## Outline
 [Overview](#overview)</br>
